@@ -11,6 +11,8 @@ use MarkForge\Nodes\HeadingNode;
 use MarkForge\Nodes\HorizontalRuleNode;
 use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
+use MarkForge\Nodes\ListItemNode;
+use MarkForge\Nodes\ListNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
 
@@ -33,6 +35,11 @@ final class HtmlRenderer implements RendererInterface
 
             if ($block instanceof BlockquoteNode) {
                 $out[] = $this->renderBlockquote($block);
+                continue;
+            }
+
+            if ($block instanceof ListNode) {
+                $out[] = $this->renderList($block);
                 continue;
             }
 
@@ -65,6 +72,34 @@ final class HtmlRenderer implements RendererInterface
         $inner = $this->render(new DocumentNode($blockquote->children()));
 
         return '<blockquote>' . $inner . '</blockquote>';
+    }
+
+    private function renderList(ListNode $list): string
+    {
+        $tag = $list->ordered() ? 'ol' : 'ul';
+        $attrs = '';
+        if ($list->ordered() && $list->start() !== null && $list->start() !== 1) {
+            $attrs = ' start="' . $this->escapeAttribute((string) $list->start()) . '"';
+        }
+
+        $itemsHtml = '';
+        foreach ($list->items() as $item) {
+            $itemsHtml .= $this->renderListItem($item);
+        }
+
+        return '<' . $tag . $attrs . '>' . $itemsHtml . '</' . $tag . '>';
+    }
+
+    private function renderListItem(ListItemNode $item): string
+    {
+        $inner = '';
+        foreach ($item->children() as $child) {
+            if ($child instanceof ParagraphNode) {
+                $inner .= $this->renderParagraph($child);
+            }
+        }
+
+        return '<li>' . $inner . '</li>';
     }
 
     /**

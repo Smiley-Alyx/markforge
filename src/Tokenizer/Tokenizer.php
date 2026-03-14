@@ -38,6 +38,15 @@ final class Tokenizer implements TokenizerInterface
                 continue;
             }
 
+            $list = $this->tryConsumeList($lines, $idx);
+            if ($list !== null) {
+                $this->flushParagraph($buffer, $tokens);
+                [$token, $newIdx] = $list;
+                $tokens[] = $token;
+                $idx = $newIdx;
+                continue;
+            }
+
             if (trim($line) === '') {
                 $this->flushParagraph($buffer, $tokens);
                 continue;
@@ -54,6 +63,85 @@ final class Tokenizer implements TokenizerInterface
     private function isBlockquoteStart(string $line): bool
     {
         return preg_match('/^>\s?/', $line) === 1;
+    }
+
+    /**
+     * @param list<string> $lines
+     * @return array{0: Token, 1: int}|null
+     */
+    private function tryConsumeList(array $lines, int $startIdx): ?array
+    {
+        $line = $lines[$startIdx] ?? '';
+
+        $unordered = $this->parseUnorderedListItem($line);
+        $ordered = $this->parseOrderedListItem($line);
+
+        if ($unordered === null && $ordered === null) {
+            return null;
+        }
+
+        $orderedMode = $ordered !== null;
+        $start = $orderedMode ? $ordered['start'] : null;
+
+        $items = [];
+        $idx = $startIdx;
+        $max = count($lines);
+
+        while ($idx < $max) {
+            $current = $lines[$idx];
+
+            if (trim($current) === '') {
+                break;
+            }
+
+            if ($orderedMode) {
+                $parsed = $this->parseOrderedListItem($current);
+                if ($parsed === null) {
+                    break;
+                }
+
+                $items[] = $parsed['text'];
+                $idx++;
+                continue;
+            }
+
+            $parsed = $this->parseUnorderedListItem($current);
+            if ($parsed === null) {
+                break;
+            }
+
+            $items[] = $parsed;
+            $idx++;
+        }
+
+        $token = new Token(TokenType::List, '', [
+            'ordered' => $orderedMode,
+            'start' => $start,
+            'items' => $items,
+        ]);
+
+        return [$token, $idx - 1];
+    }
+
+    private function parseUnorderedListItem(string $line): ?string
+    {
+        if (preg_match('/^\s*[-*+]\s+(.*)$/', $line, $m) !== 1) {
+            return null;
+        }
+
+        return $m[1];
+    }
+
+    /**
+     * @return array{start: int, text: string}|null
+     */
+    private function parseOrderedListItem(string $line): ?array
+    {
+        if (preg_match('/^\s*(\d+)\.\s+(.*)$/', $line, $m) !== 1) {
+            return null;
+        }
+
+        return ['start' => (int) $m[1], 'text' => $m[2]];
     }
 
     /**

@@ -12,6 +12,33 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Tokenizer::class)]
 final class TokenizerTest extends TestCase
 {
+    public function testTokenizesUnorderedList(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("- One\n- Two");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::List, $tokens[0]->type);
+        self::assertFalse((bool) $tokens[0]->data['ordered']);
+        self::assertSame(['One', 'Two'], $tokens[0]->data['items']);
+    }
+
+    public function testTokenizesOrderedList(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("3. Three\n4. Four");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::List, $tokens[0]->type);
+        self::assertTrue((bool) $tokens[0]->data['ordered']);
+        self::assertSame(3, $tokens[0]->data['start']);
+        self::assertSame(['Three', 'Four'], $tokens[0]->data['items']);
+    }
+
     public function testTokenizesBlockquote(): void
     {
         $tokenizer = new Tokenizer();

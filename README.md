@@ -39,6 +39,7 @@ See also: `examples/basic.php`.
 - inline code
 - horizontal rule
 - blockquote
+- lists
 - paragraphs
 - text
 

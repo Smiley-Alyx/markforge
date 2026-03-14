@@ -10,6 +10,8 @@ use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\HeadingNode;
 use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
+use MarkForge\Nodes\ListItemNode;
+use MarkForge\Nodes\ListNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
 use MarkForge\Nodes\HorizontalRuleNode;
@@ -40,6 +42,23 @@ final class Parser implements ParserInterface
                 $innerTokens = $innerTokenizer->tokenize($token->value);
                 $innerDocument = $this->parse($innerTokens);
                 $children[] = new BlockquoteNode($innerDocument->children());
+                continue;
+            }
+
+            if ($token->type === TokenType::List) {
+                $ordered = (bool) ($token->data['ordered'] ?? false);
+                $start = isset($token->data['start']) ? (int) $token->data['start'] : null;
+                /** @var list<string> $items */
+                $items = $token->data['items'] ?? [];
+
+                $listItems = [];
+                foreach ($items as $itemText) {
+                    $listItems[] = new ListItemNode([
+                        new ParagraphNode($this->parseInlines($itemText)),
+                    ]);
+                }
+
+                $children[] = new ListNode($ordered, $start, $listItems);
                 continue;
             }
 
