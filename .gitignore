@@ -1,0 +1,17 @@
+/vendor/
+/.phpunit.cache/
+/.idea/
+*.log
+.DS_Store
+
+/.vscode/
+/.fleet/
+/.php-cs-fixer.cache
+/.phpactor.json
+/.phpactor/
+/.phpstorm.meta.php/
+
+/coverage/
+/.cache/
+
+composer.lock

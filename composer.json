@@ -1,0 +1,24 @@
+{
+  "name": "markforge/markforge",
+  "description": "MarkForge — Markdown to HTML parser for PHP 8.3+ (AST-based, extensible).",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.3"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "MarkForge\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "MarkForge\\Tests\\": "tests/"
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
