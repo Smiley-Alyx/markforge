@@ -7,6 +7,7 @@ namespace MarkForge\Tests\Renderer;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
+use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
@@ -17,6 +18,21 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(HtmlRenderer::class)]
 final class HtmlRendererTest extends TestCase
 {
+    public function testRendersInlineCode(): void
+    {
+        $renderer = new HtmlRenderer();
+        $document = new DocumentNode([
+            new ParagraphNode([
+                new TextNode('Use '),
+                new InlineCodeNode('php -v'),
+            ]),
+        ]);
+
+        $html = $renderer->render($document);
+
+        self::assertSame('<p>Use <code>php -v</code></p>', $html);
+    }
+
     public function testRendersLink(): void
     {
         $renderer = new HtmlRenderer();

@@ -7,6 +7,7 @@ namespace MarkForge\Renderer;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
+use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
@@ -57,6 +58,11 @@ final class HtmlRenderer implements RendererInterface
         foreach ($inlines as $inline) {
             if ($inline instanceof TextNode) {
                 $content .= $this->escape($inline->text());
+                continue;
+            }
+
+            if ($inline instanceof InlineCodeNode) {
+                $content .= '<code>' . $this->escape($inline->code()) . '</code>';
                 continue;
             }
 

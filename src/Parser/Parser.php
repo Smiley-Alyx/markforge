@@ -7,6 +7,7 @@ namespace MarkForge\Parser;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\HeadingNode;
+use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
@@ -46,6 +47,7 @@ final class Parser implements ParserInterface
         $len = strlen($text);
 
         while ($i < $len) {
+            $nextCodePos = strpos($text, '`', $i);
             $nextLinkPos = strpos($text, '[', $i);
             $nextBoldPos = strpos($text, '**', $i);
             $nextItalicPos = strpos($text, '*', $i);
@@ -53,9 +55,16 @@ final class Parser implements ParserInterface
             $nextPos = null;
             $nextKind = null;
 
+            if ($nextCodePos !== false) {
+                $nextPos = $nextCodePos;
+                $nextKind = 'code';
+            }
+
             if ($nextLinkPos !== false) {
-                $nextPos = $nextLinkPos;
-                $nextKind = 'link';
+                if ($nextPos === null || $nextLinkPos < $nextPos) {
+                    $nextPos = $nextLinkPos;
+                    $nextKind = 'link';
+                }
             }
 
             if ($nextBoldPos !== false && ($nextPos === null || $nextBoldPos < $nextPos)) {
@@ -76,6 +85,20 @@ final class Parser implements ParserInterface
             if ($nextPos > $i) {
                 $this->appendTextIfNotEmpty($nodes, substr($text, $i, $nextPos - $i));
                 $i = $nextPos;
+            }
+
+            if ($nextKind === 'code') {
+                $close = strpos($text, '`', $i + 1);
+                if ($close === false) {
+                    $this->appendTextIfNotEmpty($nodes, '`');
+                    $i++;
+                    continue;
+                }
+
+                $inner = substr($text, $i + 1, $close - ($i + 1));
+                $nodes[] = new InlineCodeNode($inner);
+                $i = $close + 1;
+                continue;
             }
 
             if ($nextKind === 'link') {

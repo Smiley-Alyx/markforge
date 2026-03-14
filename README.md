@@ -36,6 +36,7 @@ See also: `examples/basic.php`.
 - bold
 - italic
 - links
+- inline code
 - paragraphs
 - text
 
