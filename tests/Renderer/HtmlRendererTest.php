@@ -7,6 +7,7 @@ namespace MarkForge\Tests\Renderer;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
+use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
 use MarkForge\Renderer\HtmlRenderer;
@@ -16,6 +17,20 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(HtmlRenderer::class)]
 final class HtmlRendererTest extends TestCase
 {
+    public function testRendersLink(): void
+    {
+        $renderer = new HtmlRenderer();
+        $document = new DocumentNode([
+            new ParagraphNode([
+                new LinkNode('https://example.com', [new TextNode('Example')]),
+            ]),
+        ]);
+
+        $html = $renderer->render($document);
+
+        self::assertSame('<p><a href="https://example.com">Example</a></p>', $html);
+    }
+
     public function testRendersEmphasis(): void
     {
         $renderer = new HtmlRenderer();

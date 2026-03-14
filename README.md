@@ -35,6 +35,7 @@ See also: `examples/basic.php`.
 - headings
 - bold
 - italic
+- links
 - paragraphs
 - text
 

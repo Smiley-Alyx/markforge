@@ -7,6 +7,7 @@ namespace MarkForge\Renderer;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
+use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
 
@@ -59,6 +60,12 @@ final class HtmlRenderer implements RendererInterface
                 continue;
             }
 
+            if ($inline instanceof LinkNode) {
+                $href = $this->escapeAttribute($inline->url());
+                $content .= '<a href="' . $href . '">' . $this->renderInlines($inline->children()) . '</a>';
+                continue;
+            }
+
             if ($inline instanceof EmphasisNode) {
                 $tag = $inline->level() === 2 ? 'strong' : 'em';
                 $content .= '<' . $tag . '>' . $this->renderInlines($inline->children()) . '</' . $tag . '>';
@@ -69,6 +76,11 @@ final class HtmlRenderer implements RendererInterface
     }
 
     private function escape(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+
+    private function escapeAttribute(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
