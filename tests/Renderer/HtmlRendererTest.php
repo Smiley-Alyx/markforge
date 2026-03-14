@@ -7,6 +7,7 @@ namespace MarkForge\Tests\Renderer;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
+use MarkForge\Nodes\HorizontalRuleNode;
 use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ParagraphNode;
@@ -18,6 +19,18 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(HtmlRenderer::class)]
 final class HtmlRendererTest extends TestCase
 {
+    public function testRendersHorizontalRule(): void
+    {
+        $renderer = new HtmlRenderer();
+        $document = new DocumentNode([
+            new HorizontalRuleNode(),
+        ]);
+
+        $html = $renderer->render($document);
+
+        self::assertSame('<hr />', $html);
+    }
+
     public function testRendersInlineCode(): void
     {
         $renderer = new HtmlRenderer();

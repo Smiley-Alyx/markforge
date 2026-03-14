@@ -37,6 +37,7 @@ See also: `examples/basic.php`.
 - italic
 - links
 - inline code
+- horizontal rule
 - paragraphs
 - text
 

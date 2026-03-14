@@ -22,6 +22,12 @@ final class Tokenizer implements TokenizerInterface
                 continue;
             }
 
+            if ($this->isHorizontalRule($line)) {
+                $this->flushParagraph($buffer, $tokens);
+                $tokens[] = new Token(TokenType::HorizontalRule, '');
+                continue;
+            }
+
             if (trim($line) === '') {
                 $this->flushParagraph($buffer, $tokens);
                 continue;
@@ -45,6 +51,25 @@ final class Tokenizer implements TokenizerInterface
         $text = $m[2];
 
         return new Token(TokenType::Heading, $text, ['level' => $level]);
+    }
+
+    private function isHorizontalRule(string $line): bool
+    {
+        $trimmed = trim($line);
+        if ($trimmed === '') {
+            return false;
+        }
+
+        $noSpaces = str_replace(' ', '', $trimmed);
+        if (strlen($noSpaces) < 3) {
+            return false;
+        }
+
+        if (preg_match('/^(-{3,}|\*{3,}|_{3,})$/', $noSpaces) !== 1) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

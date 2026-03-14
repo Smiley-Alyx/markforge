@@ -11,6 +11,7 @@ use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
+use MarkForge\Nodes\HorizontalRuleNode;
 use MarkForge\Tokenizer\TokenType;
 use MarkForge\Tokenizer\TokenStream;
 
@@ -24,6 +25,11 @@ final class Parser implements ParserInterface
             if ($token->type === TokenType::Heading) {
                 $level = (int) ($token->data['level'] ?? 1);
                 $children[] = new HeadingNode($level, $this->parseInlines($token->value));
+                continue;
+            }
+
+            if ($token->type === TokenType::HorizontalRule) {
+                $children[] = new HorizontalRuleNode();
                 continue;
             }
 

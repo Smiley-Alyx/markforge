@@ -7,6 +7,7 @@ namespace MarkForge\Renderer;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
+use MarkForge\Nodes\HorizontalRuleNode;
 use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ParagraphNode;
@@ -21,6 +22,11 @@ final class HtmlRenderer implements RendererInterface
         foreach ($document->children() as $block) {
             if ($block instanceof HeadingNode) {
                 $out[] = $this->renderHeading($block);
+                continue;
+            }
+
+            if ($block instanceof HorizontalRuleNode) {
+                $out[] = '<hr />';
                 continue;
             }
 

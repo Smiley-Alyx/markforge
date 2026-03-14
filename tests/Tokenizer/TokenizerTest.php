@@ -12,6 +12,17 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Tokenizer::class)]
 final class TokenizerTest extends TestCase
 {
+    public function testTokenizesHorizontalRule(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("---");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::HorizontalRule, $tokens[0]->type);
+    }
+
     public function testTokenizesHeading(): void
     {
         $tokenizer = new Tokenizer();
