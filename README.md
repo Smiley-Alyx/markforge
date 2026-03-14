@@ -33,6 +33,8 @@ See also: `examples/basic.php`.
 ## Supported Markdown (current)
 
 - headings
+- bold
+- italic
 - paragraphs
 - text
 

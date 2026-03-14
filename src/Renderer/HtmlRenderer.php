@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarkForge\Renderer;
 
 use MarkForge\Nodes\DocumentNode;
+use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
@@ -33,27 +34,38 @@ final class HtmlRenderer implements RendererInterface
     {
         $level = min(6, max(1, $heading->level()));
 
-        $content = '';
-        foreach ($heading->children() as $inline) {
-            if ($inline instanceof TextNode) {
-                $content .= $this->escape($inline->text());
-            }
-        }
+        $content = $this->renderInlines($heading->children());
 
         return '<h' . $level . '>' . $content . '</h' . $level . '>';
     }
 
     private function renderParagraph(ParagraphNode $paragraph): string
     {
+        $content = $this->renderInlines($paragraph->children());
+
+        return '<p>' . $content . '</p>';
+    }
+
+    /**
+     * @param list<\MarkForge\Nodes\Node> $inlines
+     */
+    private function renderInlines(array $inlines): string
+    {
         $content = '';
 
-        foreach ($paragraph->children() as $inline) {
+        foreach ($inlines as $inline) {
             if ($inline instanceof TextNode) {
                 $content .= $this->escape($inline->text());
+                continue;
+            }
+
+            if ($inline instanceof EmphasisNode) {
+                $tag = $inline->level() === 2 ? 'strong' : 'em';
+                $content .= '<' . $tag . '>' . $this->renderInlines($inline->children()) . '</' . $tag . '>';
             }
         }
 
-        return '<p>' . $content . '</p>';
+        return $content;
     }
 
     private function escape(string $value): string
