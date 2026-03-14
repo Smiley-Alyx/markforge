@@ -12,6 +12,19 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Tokenizer::class)]
 final class TokenizerTest extends TestCase
 {
+    public function testTokenizesHeading(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("# Title");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::Heading, $tokens[0]->type);
+        self::assertSame('Title', $tokens[0]->value);
+        self::assertSame(1, $tokens[0]->data['level']);
+    }
+
     public function testTokenizesParagraphsSeparatedByBlankLine(): void
     {
         $tokenizer = new Tokenizer();

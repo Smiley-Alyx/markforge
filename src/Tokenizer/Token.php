@@ -9,6 +9,10 @@ final class Token
     public function __construct(
         public readonly TokenType $type,
         public readonly string $value,
+        /**
+         * @var array<string, mixed>
+         */
+        public readonly array $data = [],
     ) {
     }
 }

@@ -7,4 +7,5 @@ namespace MarkForge\Tokenizer;
 enum TokenType: string
 {
     case Paragraph = 'paragraph';
+    case Heading = 'heading';
 }

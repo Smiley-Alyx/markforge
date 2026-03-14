@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarkForge\Renderer;
 
 use MarkForge\Nodes\DocumentNode;
+use MarkForge\Nodes\HeadingNode;
 use MarkForge\Nodes\ParagraphNode;
 use MarkForge\Nodes\TextNode;
 
@@ -15,12 +16,31 @@ final class HtmlRenderer implements RendererInterface
         $out = [];
 
         foreach ($document->children() as $block) {
+            if ($block instanceof HeadingNode) {
+                $out[] = $this->renderHeading($block);
+                continue;
+            }
+
             if ($block instanceof ParagraphNode) {
                 $out[] = $this->renderParagraph($block);
             }
         }
 
         return implode("\n", $out);
+    }
+
+    private function renderHeading(HeadingNode $heading): string
+    {
+        $level = min(6, max(1, $heading->level()));
+
+        $content = '';
+        foreach ($heading->children() as $inline) {
+            if ($inline instanceof TextNode) {
+                $content .= $this->escape($inline->text());
+            }
+        }
+
+        return '<h' . $level . '>' . $content . '</h' . $level . '>';
     }
 
     private function renderParagraph(ParagraphNode $paragraph): string

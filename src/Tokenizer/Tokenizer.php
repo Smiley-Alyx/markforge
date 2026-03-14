@@ -15,6 +15,13 @@ final class Tokenizer implements TokenizerInterface
         $buffer = [];
 
         foreach ($lines as $line) {
+            $heading = $this->tryParseHeading($line);
+            if ($heading !== null) {
+                $this->flushParagraph($buffer, $tokens);
+                $tokens[] = $heading;
+                continue;
+            }
+
             if (trim($line) === '') {
                 $this->flushParagraph($buffer, $tokens);
                 continue;
@@ -26,6 +33,18 @@ final class Tokenizer implements TokenizerInterface
         $this->flushParagraph($buffer, $tokens);
 
         return new TokenStream($tokens);
+    }
+
+    private function tryParseHeading(string $line): ?Token
+    {
+        if (!preg_match('/^(#{1,6})\s+(.*)$/', $line, $m)) {
+            return null;
+        }
+
+        $level = strlen($m[1]);
+        $text = $m[2];
+
+        return new Token(TokenType::Heading, $text, ['level' => $level]);
     }
 
     /**

@@ -15,8 +15,8 @@ final class MarkForgeTest extends TestCase
     {
         $parser = new MarkForge();
 
-        $html = $parser->parse("Hello\n\nWorld");
+        $html = $parser->parse("# Title\n\nHello\n\nWorld");
 
-        self::assertSame("<p>Hello</p>\n<p>World</p>", $html);
+        self::assertSame("<h1>Title</h1>\n<p>Hello</p>\n<p>World</p>", $html);
     }
 }

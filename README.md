@@ -32,6 +32,7 @@ See also: `examples/basic.php`.
 
 ## Supported Markdown (current)
 
+- headings
 - paragraphs
 - text
 
