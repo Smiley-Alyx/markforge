@@ -4,6 +4,8 @@
 *.log
 .DS_Store
 
+.phpunit.result.cache
+
 /.vscode/
 /.fleet/
 /.php-cs-fixer.cache

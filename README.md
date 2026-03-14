@@ -2,7 +2,7 @@
 
 MarkForge is an open-source Markdown to HTML parser for PHP 8.3+.
 
-This repository currently contains the project scaffold (Composer package, PHPUnit config, CI workflow). Parser implementation will be added incrementally.
+This repository currently contains a minimal, working pipeline (Tokenizer → Parser → AST → Renderer) with incremental feature development.
 
 ## Requirements
 
@@ -27,6 +27,8 @@ $html = $parser->parse("Hello, world!\n\nSecond paragraph.");
 
 echo $html;
 ```
+
+See also: `examples/basic.php`.
 
 ## Supported Markdown (current)
 
