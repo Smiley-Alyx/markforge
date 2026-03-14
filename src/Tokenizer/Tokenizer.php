@@ -14,7 +14,9 @@ final class Tokenizer implements TokenizerInterface
         $tokens = [];
         $buffer = [];
 
-        foreach ($lines as $line) {
+        $count = count($lines);
+        for ($idx = 0; $idx < $count; $idx++) {
+            $line = $lines[$idx];
             $heading = $this->tryParseHeading($line);
             if ($heading !== null) {
                 $this->flushParagraph($buffer, $tokens);
@@ -25,6 +27,14 @@ final class Tokenizer implements TokenizerInterface
             if ($this->isHorizontalRule($line)) {
                 $this->flushParagraph($buffer, $tokens);
                 $tokens[] = new Token(TokenType::HorizontalRule, '');
+                continue;
+            }
+
+            if ($this->isBlockquoteStart($line)) {
+                $this->flushParagraph($buffer, $tokens);
+                [$token, $newIdx] = $this->consumeBlockquote($lines, $idx);
+                $tokens[] = $token;
+                $idx = $newIdx;
                 continue;
             }
 
@@ -39,6 +49,44 @@ final class Tokenizer implements TokenizerInterface
         $this->flushParagraph($buffer, $tokens);
 
         return new TokenStream($tokens);
+    }
+
+    private function isBlockquoteStart(string $line): bool
+    {
+        return preg_match('/^>\s?/', $line) === 1;
+    }
+
+    /**
+     * @param list<string> $lines
+     * @return array{0: Token, 1: int}
+     */
+    private function consumeBlockquote(array $lines, int $startIdx): array
+    {
+        $innerLines = [];
+        $idx = $startIdx;
+        $max = count($lines);
+
+        while ($idx < $max) {
+            $line = $lines[$idx];
+
+            if ($this->isBlockquoteStart($line)) {
+                $innerLines[] = preg_replace('/^>\s?/', '', $line) ?? '';
+                $idx++;
+                continue;
+            }
+
+            if (trim($line) === '') {
+                $innerLines[] = '';
+                $idx++;
+                continue;
+            }
+
+            break;
+        }
+
+        $inner = implode("\n", $innerLines);
+
+        return [new Token(TokenType::Blockquote, $inner), $idx - 1];
     }
 
     private function tryParseHeading(string $line): ?Token

@@ -9,4 +9,5 @@ enum TokenType: string
     case Paragraph = 'paragraph';
     case Heading = 'heading';
     case HorizontalRule = 'horizontal_rule';
+    case Blockquote = 'blockquote';
 }

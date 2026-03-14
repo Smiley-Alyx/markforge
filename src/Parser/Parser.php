@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MarkForge\Parser;
 
+use MarkForge\Nodes\BlockquoteNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\HeadingNode;
@@ -14,6 +15,7 @@ use MarkForge\Nodes\TextNode;
 use MarkForge\Nodes\HorizontalRuleNode;
 use MarkForge\Tokenizer\TokenType;
 use MarkForge\Tokenizer\TokenStream;
+use MarkForge\Tokenizer\Tokenizer;
 
 final class Parser implements ParserInterface
 {
@@ -30,6 +32,14 @@ final class Parser implements ParserInterface
 
             if ($token->type === TokenType::HorizontalRule) {
                 $children[] = new HorizontalRuleNode();
+                continue;
+            }
+
+            if ($token->type === TokenType::Blockquote) {
+                $innerTokenizer = new Tokenizer();
+                $innerTokens = $innerTokenizer->tokenize($token->value);
+                $innerDocument = $this->parse($innerTokens);
+                $children[] = new BlockquoteNode($innerDocument->children());
                 continue;
             }
 

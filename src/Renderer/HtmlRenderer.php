@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MarkForge\Renderer;
 
+use MarkForge\Nodes\BlockquoteNode;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
@@ -30,6 +31,11 @@ final class HtmlRenderer implements RendererInterface
                 continue;
             }
 
+            if ($block instanceof BlockquoteNode) {
+                $out[] = $this->renderBlockquote($block);
+                continue;
+            }
+
             if ($block instanceof ParagraphNode) {
                 $out[] = $this->renderParagraph($block);
             }
@@ -52,6 +58,13 @@ final class HtmlRenderer implements RendererInterface
         $content = $this->renderInlines($paragraph->children());
 
         return '<p>' . $content . '</p>';
+    }
+
+    private function renderBlockquote(BlockquoteNode $blockquote): string
+    {
+        $inner = $this->render(new DocumentNode($blockquote->children()));
+
+        return '<blockquote>' . $inner . '</blockquote>';
     }
 
     /**

@@ -12,6 +12,18 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Tokenizer::class)]
 final class TokenizerTest extends TestCase
 {
+    public function testTokenizesBlockquote(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("> Quote\n> line2");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::Blockquote, $tokens[0]->type);
+        self::assertSame("Quote\nline2", $tokens[0]->value);
+    }
+
     public function testTokenizesHorizontalRule(): void
     {
         $tokenizer = new Tokenizer();

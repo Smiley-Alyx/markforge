@@ -38,6 +38,7 @@ See also: `examples/basic.php`.
 - links
 - inline code
 - horizontal rule
+- blockquote
 - paragraphs
 - text
 
