@@ -8,6 +8,7 @@ use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
 use MarkForge\Nodes\HorizontalRuleNode;
+use MarkForge\Nodes\ImageNode;
 use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ParagraphNode;
@@ -19,6 +20,21 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(HtmlRenderer::class)]
 final class HtmlRendererTest extends TestCase
 {
+    public function testRendersImage(): void
+    {
+        $renderer = new HtmlRenderer();
+        $document = new DocumentNode([
+            new ParagraphNode([
+                new TextNode('Logo: '),
+                new ImageNode('https://example.com/logo.png', 'Logo'),
+            ]),
+        ]);
+
+        $html = $renderer->render($document);
+
+        self::assertSame('<p>Logo: <img src="https://example.com/logo.png" alt="Logo" /></p>', $html);
+    }
+
     public function testRendersHorizontalRule(): void
     {
         $renderer = new HtmlRenderer();

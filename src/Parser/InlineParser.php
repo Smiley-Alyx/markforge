@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarkForge\Parser;
 
 use MarkForge\Nodes\EmphasisNode;
+use MarkForge\Nodes\ImageNode;
 use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\Node;
@@ -23,6 +24,7 @@ final class InlineParser implements InlineParserInterface
 
         while ($i < $len) {
             $nextCodePos = strpos($text, '`', $i);
+            $nextImagePos = strpos($text, '![', $i);
             $nextLinkPos = strpos($text, '[', $i);
             $nextBoldPos = strpos($text, '**', $i);
             $nextItalicPos = strpos($text, '*', $i);
@@ -33,6 +35,13 @@ final class InlineParser implements InlineParserInterface
             if ($nextCodePos !== false) {
                 $nextPos = $nextCodePos;
                 $nextKind = 'code';
+            }
+
+            if ($nextImagePos !== false) {
+                if ($nextPos === null || $nextImagePos < $nextPos) {
+                    $nextPos = $nextImagePos;
+                    $nextKind = 'image';
+                }
             }
 
             if ($nextLinkPos !== false) {
@@ -73,6 +82,20 @@ final class InlineParser implements InlineParserInterface
                 $inner = substr($text, $i + 1, $close - ($i + 1));
                 $nodes[] = new InlineCodeNode($inner);
                 $i = $close + 1;
+                continue;
+            }
+
+            if ($nextKind === 'image') {
+                $image = $this->tryParseImageAt($text, $i);
+                if ($image === null) {
+                    $this->appendTextIfNotEmpty($nodes, '!');
+                    $i++;
+                    continue;
+                }
+
+                [$node, $newPos] = $image;
+                $nodes[] = $node;
+                $i = $newPos;
                 continue;
             }
 
@@ -117,6 +140,41 @@ final class InlineParser implements InlineParserInterface
         }
 
         return $nodes;
+    }
+
+    /**
+     * @return array{0: Node, 1: int}|null
+     */
+    private function tryParseImageAt(string $text, int $pos): ?array
+    {
+        if (!isset($text[$pos], $text[$pos + 1]) || $text[$pos] !== '!' || $text[$pos + 1] !== '[') {
+            return null;
+        }
+
+        $closeBracket = strpos($text, ']', $pos + 2);
+        if ($closeBracket === false) {
+            return null;
+        }
+
+        $openParenPos = $closeBracket + 1;
+        if (!isset($text[$openParenPos]) || $text[$openParenPos] !== '(') {
+            return null;
+        }
+
+        $closeParen = strpos($text, ')', $openParenPos + 1);
+        if ($closeParen === false) {
+            return null;
+        }
+
+        $alt = substr($text, $pos + 2, $closeBracket - ($pos + 2));
+        $rawUrl = trim(substr($text, $openParenPos + 1, $closeParen - ($openParenPos + 1)));
+
+        $url = $this->sanitizeUrl($rawUrl);
+        if ($url === null) {
+            return [new TextNode(substr($text, $pos, $closeParen - $pos + 1)), $closeParen + 1];
+        }
+
+        return [new ImageNode($url, $alt), $closeParen + 1];
     }
 
     /**

@@ -42,6 +42,7 @@ See also: `examples/basic.php`.
 - lists
 - fenced code blocks
 - tables
+- images
 - paragraphs
 - text
 

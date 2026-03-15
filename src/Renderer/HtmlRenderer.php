@@ -10,6 +10,7 @@ use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
 use MarkForge\Nodes\HorizontalRuleNode;
+use MarkForge\Nodes\ImageNode;
 use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ListItemNode;
@@ -171,6 +172,11 @@ final class HtmlRenderer implements RendererInterface
 
             if ($inline instanceof InlineCodeNode) {
                 $content .= '<code>' . $this->escape($inline->code()) . '</code>';
+                continue;
+            }
+
+            if ($inline instanceof ImageNode) {
+                $content .= '<img src="' . $this->escapeAttribute($inline->src()) . '" alt="' . $this->escapeAttribute($inline->alt()) . '" />';
                 continue;
             }
 
