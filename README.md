@@ -41,6 +41,7 @@ See also: `examples/basic.php`.
 - blockquote
 - lists
 - fenced code blocks
+- tables
 - paragraphs
 - text
 

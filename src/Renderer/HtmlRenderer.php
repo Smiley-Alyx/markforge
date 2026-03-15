@@ -15,6 +15,9 @@ use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ListItemNode;
 use MarkForge\Nodes\ListNode;
 use MarkForge\Nodes\ParagraphNode;
+use MarkForge\Nodes\TableCellNode;
+use MarkForge\Nodes\TableNode;
+use MarkForge\Nodes\TableRowNode;
 use MarkForge\Nodes\TextNode;
 
 final class HtmlRenderer implements RendererInterface
@@ -46,6 +49,11 @@ final class HtmlRenderer implements RendererInterface
 
             if ($block instanceof CodeBlockNode) {
                 $out[] = $this->renderCodeBlock($block);
+                continue;
+            }
+
+            if ($block instanceof TableNode) {
+                $out[] = $this->renderTable($block);
                 continue;
             }
 
@@ -116,6 +124,36 @@ final class HtmlRenderer implements RendererInterface
         }
 
         return '<pre><code' . $attrs . '>' . $this->escape($codeBlock->code()) . '</code></pre>';
+    }
+
+    private function renderTable(TableNode $table): string
+    {
+        $thead = '<thead>' . $this->renderTableRow($table->header()) . '</thead>';
+        $tbodyRows = '';
+        foreach ($table->rows() as $row) {
+            $tbodyRows .= $this->renderTableRow($row);
+        }
+        $tbody = '<tbody>' . $tbodyRows . '</tbody>';
+
+        return '<table>' . $thead . $tbody . '</table>';
+    }
+
+    private function renderTableRow(TableRowNode $row): string
+    {
+        $cells = '';
+        foreach ($row->cells() as $cell) {
+            $cells .= $this->renderTableCell($cell);
+        }
+
+        return '<tr>' . $cells . '</tr>';
+    }
+
+    private function renderTableCell(TableCellNode $cell): string
+    {
+        $tag = $cell->header() ? 'th' : 'td';
+        $content = $this->renderInlines($cell->children());
+
+        return '<' . $tag . '>' . $content . '</' . $tag . '>';
     }
 
     /**

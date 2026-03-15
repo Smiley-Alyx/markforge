@@ -12,4 +12,5 @@ enum TokenType: string
     case Blockquote = 'blockquote';
     case List = 'list';
     case CodeBlock = 'code_block';
+    case Table = 'table';
 }

@@ -11,6 +11,9 @@ use MarkForge\Nodes\HeadingNode;
 use MarkForge\Nodes\ListItemNode;
 use MarkForge\Nodes\ListNode;
 use MarkForge\Nodes\ParagraphNode;
+use MarkForge\Nodes\TableCellNode;
+use MarkForge\Nodes\TableNode;
+use MarkForge\Nodes\TableRowNode;
 use MarkForge\Nodes\HorizontalRuleNode;
 use MarkForge\Tokenizer\TokenType;
 use MarkForge\Tokenizer\TokenStream;
@@ -67,6 +70,30 @@ final class Parser implements ParserInterface
             if ($token->type === TokenType::CodeBlock) {
                 $info = (string) ($token->data['info'] ?? '');
                 $children[] = new CodeBlockNode($token->value, $info);
+                continue;
+            }
+
+            if ($token->type === TokenType::Table) {
+                /** @var list<string> $header */
+                $header = $token->data['header'] ?? [];
+                /** @var list<list<string>> $rows */
+                $rows = $token->data['rows'] ?? [];
+
+                $headerCells = [];
+                foreach ($header as $cellText) {
+                    $headerCells[] = new TableCellNode(true, $this->parseInlines($cellText));
+                }
+
+                $bodyRows = [];
+                foreach ($rows as $row) {
+                    $cells = [];
+                    foreach ($row as $cellText) {
+                        $cells[] = new TableCellNode(false, $this->parseInlines($cellText));
+                    }
+                    $bodyRows[] = new TableRowNode($cells);
+                }
+
+                $children[] = new TableNode(new TableRowNode($headerCells), $bodyRows);
                 continue;
             }
 

@@ -12,6 +12,19 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Tokenizer::class)]
 final class TokenizerTest extends TestCase
 {
+    public function testTokenizesTable(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("| A | B |\n|---|---|\n| 1 | 2 |");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::Table, $tokens[0]->type);
+        self::assertSame(['A', 'B'], $tokens[0]->data['header']);
+        self::assertSame([['1', '2']], $tokens[0]->data['rows']);
+    }
+
     public function testTokenizesFencedCodeBlock(): void
     {
         $tokenizer = new Tokenizer();

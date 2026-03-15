@@ -27,6 +27,15 @@ final class Tokenizer implements TokenizerInterface
                 continue;
             }
 
+            $table = $this->tryConsumeTable($lines, $idx);
+            if ($table !== null) {
+                $this->flushParagraph($buffer, $tokens);
+                [$token, $newIdx] = $table;
+                $tokens[] = $token;
+                $idx = $newIdx;
+                continue;
+            }
+
             $heading = $this->tryParseHeading($line);
             if ($heading !== null) {
                 $this->flushParagraph($buffer, $tokens);
@@ -68,6 +77,118 @@ final class Tokenizer implements TokenizerInterface
         $this->flushParagraph($buffer, $tokens);
 
         return new TokenStream($tokens);
+    }
+
+    /**
+     * @param list<string> $lines
+     * @return array{0: Token, 1: int}|null
+     */
+    private function tryConsumeTable(array $lines, int $startIdx): ?array
+    {
+        $headerLine = $lines[$startIdx] ?? '';
+        $separatorLine = $lines[$startIdx + 1] ?? null;
+        if ($separatorLine === null) {
+            return null;
+        }
+
+        if (!$this->looksLikeTableRow($headerLine)) {
+            return null;
+        }
+
+        if (!$this->isTableSeparatorLine($separatorLine)) {
+            return null;
+        }
+
+        $headerCells = $this->splitTableRow($headerLine);
+        $columnCount = count($headerCells);
+        if ($columnCount === 0) {
+            return null;
+        }
+
+        $rows = [];
+        $idx = $startIdx + 2;
+        $max = count($lines);
+        while ($idx < $max) {
+            $line = $lines[$idx];
+            if (trim($line) === '') {
+                break;
+            }
+
+            if (!$this->looksLikeTableRow($line)) {
+                break;
+            }
+
+            $cells = $this->splitTableRow($line);
+            if (count($cells) !== $columnCount) {
+                break;
+            }
+
+            $rows[] = $cells;
+            $idx++;
+        }
+
+        $token = new Token(TokenType::Table, '', [
+            'header' => $headerCells,
+            'rows' => $rows,
+        ]);
+
+        return [$token, $idx - 1];
+    }
+
+    private function looksLikeTableRow(string $line): bool
+    {
+        return str_contains($line, '|');
+    }
+
+    private function isTableSeparatorLine(string $line): bool
+    {
+        $trimmed = trim($line);
+        if ($trimmed === '') {
+            return false;
+        }
+
+        $noSpaces = str_replace(' ', '', $trimmed);
+        $parts = $this->splitTableRow($noSpaces);
+        if ($parts === []) {
+            return false;
+        }
+
+        foreach ($parts as $part) {
+            if ($part === '') {
+                return false;
+            }
+            if (preg_match('/^:?-{3,}:?$/', $part) !== 1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function splitTableRow(string $line): array
+    {
+        $trimmed = trim($line);
+        if ($trimmed === '') {
+            return [];
+        }
+
+        if (str_starts_with($trimmed, '|')) {
+            $trimmed = substr($trimmed, 1);
+        }
+        if (str_ends_with($trimmed, '|')) {
+            $trimmed = substr($trimmed, 0, -1);
+        }
+
+        $raw = explode('|', $trimmed);
+        $cells = [];
+        foreach ($raw as $cell) {
+            $cells[] = trim($cell);
+        }
+
+        return $cells;
     }
 
     private function isBlockquoteStart(string $line): bool
