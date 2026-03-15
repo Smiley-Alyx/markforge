@@ -15,6 +15,10 @@ This repository currently contains a minimal, working pipeline (Tokenizer → Pa
 composer require markforge/markforge
 ```
 
+## Changelog
+
+See `CHANGELOG.md`.
+
 ## Usage
 
 ```php
@@ -51,8 +55,14 @@ See also: `examples/basic.php`.
 
 ```bash
 composer install
-vendor/bin/phpunit
+composer test
 ```
+
+## Release / Packagist
+
+- Publish the repository on GitHub.
+- Create a semver tag (e.g. `v0.1.0`).
+- Submit the repository to Packagist so `composer require markforge/markforge` works without VCS configuration.
 
 ## Project structure
 
