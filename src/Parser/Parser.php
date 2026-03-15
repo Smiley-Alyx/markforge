@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarkForge\Parser;
 
 use MarkForge\Nodes\BlockquoteNode;
+use MarkForge\Nodes\CodeBlockNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\HeadingNode;
@@ -59,6 +60,12 @@ final class Parser implements ParserInterface
                 }
 
                 $children[] = new ListNode($ordered, $start, $listItems);
+                continue;
+            }
+
+            if ($token->type === TokenType::CodeBlock) {
+                $info = (string) ($token->data['info'] ?? '');
+                $children[] = new CodeBlockNode($token->value, $info);
                 continue;
             }
 

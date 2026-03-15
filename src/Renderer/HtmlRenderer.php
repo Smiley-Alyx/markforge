@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MarkForge\Renderer;
 
 use MarkForge\Nodes\BlockquoteNode;
+use MarkForge\Nodes\CodeBlockNode;
 use MarkForge\Nodes\DocumentNode;
 use MarkForge\Nodes\EmphasisNode;
 use MarkForge\Nodes\HeadingNode;
@@ -40,6 +41,11 @@ final class HtmlRenderer implements RendererInterface
 
             if ($block instanceof ListNode) {
                 $out[] = $this->renderList($block);
+                continue;
+            }
+
+            if ($block instanceof CodeBlockNode) {
+                $out[] = $this->renderCodeBlock($block);
                 continue;
             }
 
@@ -100,6 +106,16 @@ final class HtmlRenderer implements RendererInterface
         }
 
         return '<li>' . $inner . '</li>';
+    }
+
+    private function renderCodeBlock(CodeBlockNode $codeBlock): string
+    {
+        $attrs = '';
+        if ($codeBlock->info() !== '') {
+            $attrs = ' class="language-' . $this->escapeAttribute($codeBlock->info()) . '"';
+        }
+
+        return '<pre><code' . $attrs . '>' . $this->escape($codeBlock->code()) . '</code></pre>';
     }
 
     /**

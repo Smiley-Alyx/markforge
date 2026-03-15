@@ -17,6 +17,16 @@ final class Tokenizer implements TokenizerInterface
         $count = count($lines);
         for ($idx = 0; $idx < $count; $idx++) {
             $line = $lines[$idx];
+
+            $codeFence = $this->tryConsumeFencedCodeBlock($lines, $idx);
+            if ($codeFence !== null) {
+                $this->flushParagraph($buffer, $tokens);
+                [$token, $newIdx] = $codeFence;
+                $tokens[] = $token;
+                $idx = $newIdx;
+                continue;
+            }
+
             $heading = $this->tryParseHeading($line);
             if ($heading !== null) {
                 $this->flushParagraph($buffer, $tokens);
@@ -63,6 +73,43 @@ final class Tokenizer implements TokenizerInterface
     private function isBlockquoteStart(string $line): bool
     {
         return preg_match('/^>\s?/', $line) === 1;
+    }
+
+    /**
+     * @param list<string> $lines
+     * @return array{0: Token, 1: int}|null
+     */
+    private function tryConsumeFencedCodeBlock(array $lines, int $startIdx): ?array
+    {
+        $line = $lines[$startIdx] ?? '';
+
+        if (preg_match('/^```\s*(.*)$/', $line, $m) !== 1) {
+            return null;
+        }
+
+        $info = trim($m[1]);
+        $codeLines = [];
+
+        $idx = $startIdx + 1;
+        $max = count($lines);
+        while ($idx < $max) {
+            $current = $lines[$idx];
+            if (preg_match('/^```\s*$/', $current) === 1) {
+                break;
+            }
+
+            $codeLines[] = $current;
+            $idx++;
+        }
+
+        $code = implode("\n", $codeLines);
+        $token = new Token(TokenType::CodeBlock, $code, ['info' => $info]);
+
+        if ($idx >= $max) {
+            return [$token, $max - 1];
+        }
+
+        return [$token, $idx];
     }
 
     /**

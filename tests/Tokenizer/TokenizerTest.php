@@ -12,6 +12,19 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Tokenizer::class)]
 final class TokenizerTest extends TestCase
 {
+    public function testTokenizesFencedCodeBlock(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("```php\necho 1;\n```");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::CodeBlock, $tokens[0]->type);
+        self::assertSame('echo 1;', $tokens[0]->value);
+        self::assertSame('php', $tokens[0]->data['info']);
+    }
+
     public function testTokenizesUnorderedList(): void
     {
         $tokenizer = new Tokenizer();

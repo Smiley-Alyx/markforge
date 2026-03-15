@@ -1,4 +1,4 @@
-# markforge
+# MarkForge
 
 MarkForge is an open-source Markdown to HTML parser for PHP 8.3+.
 
@@ -40,6 +40,7 @@ See also: `examples/basic.php`.
 - horizontal rule
 - blockquote
 - lists
+- fenced code blocks
 - paragraphs
 - text
 
