@@ -9,8 +9,8 @@
     "html"
   ],
   "support": {
-    "issues": "https://github.com/markforge/markforge/issues",
-    "source": "https://github.com/markforge/markforge"
+    "issues": "https://github.com/Smiley-Alyx/markforge/issues",
+    "source": "https://github.com/Smiley-Alyx/markforge"
   },
   "require": {
     "php": ">=8.3"

@@ -60,7 +60,7 @@ composer test
 
 ## Release / Packagist
 
-- Publish the repository on GitHub.
+- Publish the repository on GitHub (source: https://github.com/Smiley-Alyx/markforge).
 - Create a semver tag (e.g. `v0.1.0`).
 - Submit the repository to Packagist so `composer require markforge/markforge` works without VCS configuration.
 
