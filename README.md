@@ -43,6 +43,7 @@ See also: `examples/basic.php`.
 - fenced code blocks
 - tables
 - images
+- strikethrough
 - paragraphs
 - text
 

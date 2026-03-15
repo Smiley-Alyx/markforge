@@ -20,6 +20,23 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(HtmlRenderer::class)]
 final class HtmlRendererTest extends TestCase
 {
+    public function testRendersStrikethrough(): void
+    {
+        $renderer = new HtmlRenderer();
+        $document = new DocumentNode([
+            new ParagraphNode([
+                new TextNode('Old: '),
+                new \MarkForge\Nodes\StrikethroughNode([
+                    new TextNode('text'),
+                ]),
+            ]),
+        ]);
+
+        $html = $renderer->render($document);
+
+        self::assertSame('<p>Old: <del>text</del></p>', $html);
+    }
+
     public function testRendersImage(): void
     {
         $renderer = new HtmlRenderer();

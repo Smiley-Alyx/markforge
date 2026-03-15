@@ -16,6 +16,7 @@ use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\ListItemNode;
 use MarkForge\Nodes\ListNode;
 use MarkForge\Nodes\ParagraphNode;
+use MarkForge\Nodes\StrikethroughNode;
 use MarkForge\Nodes\TableCellNode;
 use MarkForge\Nodes\TableNode;
 use MarkForge\Nodes\TableRowNode;
@@ -189,6 +190,11 @@ final class HtmlRenderer implements RendererInterface
             if ($inline instanceof EmphasisNode) {
                 $tag = $inline->level() === 2 ? 'strong' : 'em';
                 $content .= '<' . $tag . '>' . $this->renderInlines($inline->children()) . '</' . $tag . '>';
+                continue;
+            }
+
+            if ($inline instanceof StrikethroughNode) {
+                $content .= '<del>' . $this->renderInlines($inline->children()) . '</del>';
             }
         }
 

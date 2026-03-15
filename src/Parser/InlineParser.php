@@ -9,6 +9,7 @@ use MarkForge\Nodes\ImageNode;
 use MarkForge\Nodes\InlineCodeNode;
 use MarkForge\Nodes\LinkNode;
 use MarkForge\Nodes\Node;
+use MarkForge\Nodes\StrikethroughNode;
 use MarkForge\Nodes\TextNode;
 
 final class InlineParser implements InlineParserInterface
@@ -26,6 +27,7 @@ final class InlineParser implements InlineParserInterface
             $nextCodePos = strpos($text, '`', $i);
             $nextImagePos = strpos($text, '![', $i);
             $nextLinkPos = strpos($text, '[', $i);
+            $nextStrikePos = strpos($text, '~~', $i);
             $nextBoldPos = strpos($text, '**', $i);
             $nextItalicPos = strpos($text, '*', $i);
 
@@ -48,6 +50,13 @@ final class InlineParser implements InlineParserInterface
                 if ($nextPos === null || $nextLinkPos < $nextPos) {
                     $nextPos = $nextLinkPos;
                     $nextKind = 'link';
+                }
+            }
+
+            if ($nextStrikePos !== false) {
+                if ($nextPos === null || $nextStrikePos < $nextPos) {
+                    $nextPos = $nextStrikePos;
+                    $nextKind = 'strike';
                 }
             }
 
@@ -82,6 +91,20 @@ final class InlineParser implements InlineParserInterface
                 $inner = substr($text, $i + 1, $close - ($i + 1));
                 $nodes[] = new InlineCodeNode($inner);
                 $i = $close + 1;
+                continue;
+            }
+
+            if ($nextKind === 'strike') {
+                $close = strpos($text, '~~', $i + 2);
+                if ($close === false) {
+                    $this->appendTextIfNotEmpty($nodes, '~~');
+                    $i += 2;
+                    continue;
+                }
+
+                $inner = substr($text, $i + 2, $close - ($i + 2));
+                $nodes[] = new StrikethroughNode($this->parse($inner));
+                $i = $close + 2;
                 continue;
             }
 
