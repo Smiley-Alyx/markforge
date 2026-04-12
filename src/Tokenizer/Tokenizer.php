@@ -331,27 +331,44 @@ final class Tokenizer implements TokenizerInterface
         $idx = $startIdx;
         $max = count($lines);
 
+        $previousWasBlank = false;
+
         while ($idx < $max) {
             $line = $lines[$idx];
 
             if ($this->isBlockquoteStart($line)) {
-                $innerLines[] = preg_replace('/^>\s?/', '', $line) ?? '';
+                $innerLines[] = $this->stripBlockquotePrefix($line);
+                $previousWasBlank = false;
                 $idx++;
                 continue;
             }
 
             if (trim($line) === '') {
                 $innerLines[] = '';
+                $previousWasBlank = true;
                 $idx++;
                 continue;
             }
 
-            break;
+            if ($previousWasBlank) {
+                break;
+            }
+
+            $innerLines[] = $line;
+            $previousWasBlank = false;
+            $idx++;
+            continue;
+
         }
 
         $inner = implode("\n", $innerLines);
 
         return [new Token(TokenType::Blockquote, $inner), $idx - 1];
+    }
+
+    private function stripBlockquotePrefix(string $line): string
+    {
+        return preg_replace('/^>\s?/', '', $line) ?? '';
     }
 
     private function tryParseHeading(string $line): ?Token

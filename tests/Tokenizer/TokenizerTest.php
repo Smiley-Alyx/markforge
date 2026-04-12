@@ -89,6 +89,30 @@ final class TokenizerTest extends TestCase
         self::assertSame("Quote\nline2", $tokens[0]->value);
     }
 
+    public function testTokenizesBlockquoteWithLazyContinuation(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("> Quote\nlazy\n> still quoted");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::Blockquote, $tokens[0]->type);
+        self::assertSame("Quote\nlazy\nstill quoted", $tokens[0]->value);
+    }
+
+    public function testBlockquoteStopsAfterBlankLine(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("> Quote\n\nNot quoted");
+
+        $tokens = $stream->all();
+
+        self::assertCount(2, $tokens);
+        self::assertSame(TokenType::Blockquote, $tokens[0]->type);
+        self::assertSame(TokenType::Paragraph, $tokens[1]->type);
+    }
+
     public function testTokenizesHorizontalRule(): void
     {
         $tokenizer = new Tokenizer();
