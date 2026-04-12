@@ -24,6 +24,8 @@ final class InlineParser implements InlineParserInterface
         $len = strlen($text);
 
         while ($i < $len) {
+            $nextEscapePos = strpos($text, '\\', $i);
+            $nextAutolinkPos = strpos($text, '<', $i);
             $nextCodePos = strpos($text, '`', $i);
             $nextImagePos = strpos($text, '![', $i);
             $nextLinkPos = strpos($text, '[', $i);
@@ -37,6 +39,20 @@ final class InlineParser implements InlineParserInterface
             if ($nextCodePos !== false) {
                 $nextPos = $nextCodePos;
                 $nextKind = 'code';
+            }
+
+            if ($nextEscapePos !== false) {
+                if ($nextPos === null || $nextEscapePos < $nextPos) {
+                    $nextPos = $nextEscapePos;
+                    $nextKind = 'escape';
+                }
+            }
+
+            if ($nextAutolinkPos !== false) {
+                if ($nextPos === null || $nextAutolinkPos < $nextPos) {
+                    $nextPos = $nextAutolinkPos;
+                    $nextKind = 'autolink';
+                }
             }
 
             if ($nextImagePos !== false) {
@@ -78,6 +94,32 @@ final class InlineParser implements InlineParserInterface
             if ($nextPos > $i) {
                 $this->appendTextIfNotEmpty($nodes, substr($text, $i, $nextPos - $i));
                 $i = $nextPos;
+            }
+
+            if ($nextKind === 'escape') {
+                if ($i + 1 < $len) {
+                    $this->appendTextIfNotEmpty($nodes, $text[$i + 1]);
+                    $i += 2;
+                    continue;
+                }
+
+                $this->appendTextIfNotEmpty($nodes, '\\');
+                $i++;
+                continue;
+            }
+
+            if ($nextKind === 'autolink') {
+                $autolink = $this->tryParseAutolinkAt($text, $i);
+                if ($autolink === null) {
+                    $this->appendTextIfNotEmpty($nodes, '<');
+                    $i++;
+                    continue;
+                }
+
+                [$node, $newPos] = $autolink;
+                $nodes[] = $node;
+                $i = $newPos;
+                continue;
             }
 
             if ($nextKind === 'code') {
@@ -137,6 +179,12 @@ final class InlineParser implements InlineParserInterface
             }
 
             if ($nextKind === 'bold') {
+                if (!$this->canOpenEmphasis($text, $i, 2)) {
+                    $this->appendTextIfNotEmpty($nodes, '**');
+                    $i += 2;
+                    continue;
+                }
+
                 $close = strpos($text, '**', $i + 2);
                 if ($close === false) {
                     $this->appendTextIfNotEmpty($nodes, '**');
@@ -147,6 +195,12 @@ final class InlineParser implements InlineParserInterface
                 $inner = substr($text, $i + 2, $close - ($i + 2));
                 $nodes[] = new EmphasisNode(2, $this->parse($inner));
                 $i = $close + 2;
+                continue;
+            }
+
+            if (!$this->canOpenEmphasis($text, $i, 1)) {
+                $this->appendTextIfNotEmpty($nodes, '*');
+                $i++;
                 continue;
             }
 
@@ -163,6 +217,54 @@ final class InlineParser implements InlineParserInterface
         }
 
         return $nodes;
+    }
+
+    /**
+     * @return array{0: Node, 1: int}|null
+     */
+    private function tryParseAutolinkAt(string $text, int $pos): ?array
+    {
+        if ($text[$pos] !== '<') {
+            return null;
+        }
+
+        $close = strpos($text, '>', $pos + 1);
+        if ($close === false) {
+            return null;
+        }
+
+        $inner = trim(substr($text, $pos + 1, $close - ($pos + 1)));
+        if ($inner === '') {
+            return null;
+        }
+
+        if (str_contains($inner, ' ') || str_contains($inner, "\n")) {
+            return null;
+        }
+
+        $url = $this->sanitizeUrl($inner);
+        if ($url === null) {
+            return null;
+        }
+
+        return [new LinkNode($url, [new TextNode($url)]), $close + 1];
+    }
+
+    private function canOpenEmphasis(string $text, int $pos, int $markerLen): bool
+    {
+        $before = $pos > 0 ? $text[$pos - 1] : null;
+        $afterPos = $pos + $markerLen;
+        $after = $afterPos < strlen($text) ? $text[$afterPos] : null;
+
+        if ($after === null || $after === ' ' || $after === "\n") {
+            return false;
+        }
+
+        if ($before !== null && ctype_alnum($before) && $after !== null && ctype_alnum($after)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
