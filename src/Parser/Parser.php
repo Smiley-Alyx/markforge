@@ -69,17 +69,19 @@ final class Parser implements ParserInterface
                 $header = $token->data['header'] ?? [];
                 /** @var list<list<string>> $rows */
                 $rows = $token->data['rows'] ?? [];
+                /** @var list<?string> $align */
+                $align = $token->data['align'] ?? [];
 
                 $headerCells = [];
-                foreach ($header as $cellText) {
-                    $headerCells[] = new TableCellNode(true, $this->parseInlines($cellText));
+                foreach ($header as $idx => $cellText) {
+                    $headerCells[] = new TableCellNode(true, $align[$idx] ?? null, $this->parseInlines($cellText));
                 }
 
                 $bodyRows = [];
                 foreach ($rows as $row) {
                     $cells = [];
-                    foreach ($row as $cellText) {
-                        $cells[] = new TableCellNode(false, $this->parseInlines($cellText));
+                    foreach ($row as $idx => $cellText) {
+                        $cells[] = new TableCellNode(false, $align[$idx] ?? null, $this->parseInlines($cellText));
                     }
                     $bodyRows[] = new TableRowNode($cells);
                 }

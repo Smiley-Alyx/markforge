@@ -9,6 +9,7 @@ final class TableCellNode extends Node
     /** @param list<Node> $children */
     public function __construct(
         private readonly bool $header,
+        private readonly ?string $align,
         private readonly array $children,
     ) {
     }
@@ -16,6 +17,11 @@ final class TableCellNode extends Node
     public function header(): bool
     {
         return $this->header;
+    }
+
+    public function align(): ?string
+    {
+        return $this->align;
     }
 
     /** @return list<Node> */

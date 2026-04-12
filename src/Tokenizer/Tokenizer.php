@@ -100,8 +100,13 @@ final class Tokenizer implements TokenizerInterface
         }
 
         $headerCells = $this->splitTableRow($headerLine);
+        $align = $this->parseTableAlignments($separatorLine);
         $columnCount = count($headerCells);
         if ($columnCount === 0) {
+            return null;
+        }
+
+        if (count($align) !== $columnCount) {
             return null;
         }
 
@@ -130,6 +135,7 @@ final class Tokenizer implements TokenizerInterface
         $token = new Token(TokenType::Table, '', [
             'header' => $headerCells,
             'rows' => $rows,
+            'align' => $align,
         ]);
 
         return [$token, $idx - 1];
@@ -163,6 +169,40 @@ final class Tokenizer implements TokenizerInterface
         }
 
         return true;
+    }
+
+    /**
+     * @return list<?string>
+     */
+    private function parseTableAlignments(string $separatorLine): array
+    {
+        $noSpaces = str_replace(' ', '', trim($separatorLine));
+        $parts = $this->splitTableRow($noSpaces);
+
+        $align = [];
+        foreach ($parts as $part) {
+            $starts = str_starts_with($part, ':');
+            $ends = str_ends_with($part, ':');
+
+            if ($starts && $ends) {
+                $align[] = 'center';
+                continue;
+            }
+
+            if ($starts) {
+                $align[] = 'left';
+                continue;
+            }
+
+            if ($ends) {
+                $align[] = 'right';
+                continue;
+            }
+
+            $align[] = null;
+        }
+
+        return $align;
     }
 
     /**

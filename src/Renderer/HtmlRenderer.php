@@ -165,7 +165,12 @@ final class HtmlRenderer implements RendererInterface
         $tag = $cell->header() ? 'th' : 'td';
         $content = $this->renderInlines($cell->children());
 
-        return '<' . $tag . '>' . $content . '</' . $tag . '>';
+        $attrs = '';
+        if ($cell->align() !== null) {
+            $attrs = ' style="text-align: ' . $this->escapeAttribute($cell->align()) . '"';
+        }
+
+        return '<' . $tag . $attrs . '>' . $content . '</' . $tag . '>';
     }
 
     /**

@@ -23,6 +23,19 @@ final class TokenizerTest extends TestCase
         self::assertSame(TokenType::Table, $tokens[0]->type);
         self::assertSame(['A', 'B'], $tokens[0]->data['header']);
         self::assertSame([['1', '2']], $tokens[0]->data['rows']);
+        self::assertSame([null, null], $tokens[0]->data['align']);
+    }
+
+    public function testTokenizesTableAlignment(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("| A | B | C |\n|:---|---:|:---:|\n| 1 | 2 | 3 |");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::Table, $tokens[0]->type);
+        self::assertSame(['left', 'right', 'center'], $tokens[0]->data['align']);
     }
 
     public function testTokenizesFencedCodeBlock(): void
