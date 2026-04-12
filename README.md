@@ -1,5 +1,7 @@
 # MarkForge
 
+[![CI](https://github.com/Smiley-Alyx/markforge/actions/workflows/ci.yml/badge.svg)](https://github.com/Smiley-Alyx/markforge/actions/workflows/ci.yml)
+
 MarkForge is an open-source Markdown to HTML parser for PHP 8.3+.
 
 This repository currently contains a minimal, working pipeline (Tokenizer → Parser → AST → Renderer) with incremental feature development.
