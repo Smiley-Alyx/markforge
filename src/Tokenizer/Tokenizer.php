@@ -251,7 +251,7 @@ final class Tokenizer implements TokenizerInterface
         $orderedMode = $ordered !== null;
         $start = $orderedMode ? $ordered['start'] : null;
 
-        $items = [];
+        $blockLines = [];
         $idx = $startIdx;
         $max = count($lines);
 
@@ -259,36 +259,45 @@ final class Tokenizer implements TokenizerInterface
             $current = $lines[$idx];
 
             if (trim($current) === '') {
-                break;
-            }
-
-            if ($orderedMode) {
-                $parsed = $this->parseOrderedListItem($current);
-                if ($parsed === null) {
+                $next = $lines[$idx + 1] ?? null;
+                if ($next === null) {
                     break;
                 }
 
-                $items[] = $parsed['text'];
+                if ($this->isAnyListItemLine($next) || $this->isIndentedContinuationLine($next)) {
+                    $blockLines[] = '';
+                    $idx++;
+                    continue;
+                }
+
+                break;
+            }
+
+            if ($this->isAnyListItemLine($current) || $this->isIndentedContinuationLine($current)) {
+                $blockLines[] = $current;
                 $idx++;
                 continue;
             }
 
-            $parsed = $this->parseUnorderedListItem($current);
-            if ($parsed === null) {
-                break;
-            }
-
-            $items[] = $parsed;
-            $idx++;
+            break;
         }
 
-        $token = new Token(TokenType::List, '', [
+        $token = new Token(TokenType::List, implode("\n", $blockLines), [
             'ordered' => $orderedMode,
             'start' => $start,
-            'items' => $items,
         ]);
 
         return [$token, $idx - 1];
+    }
+
+    private function isAnyListItemLine(string $line): bool
+    {
+        return $this->parseUnorderedListItem($line) !== null || $this->parseOrderedListItem($line) !== null;
+    }
+
+    private function isIndentedContinuationLine(string $line): bool
+    {
+        return preg_match('/^(\t| {2,})\S/', $line) === 1;
     }
 
     private function parseUnorderedListItem(string $line): ?string

@@ -48,7 +48,7 @@ final class TokenizerTest extends TestCase
         self::assertCount(1, $tokens);
         self::assertSame(TokenType::List, $tokens[0]->type);
         self::assertFalse((bool) $tokens[0]->data['ordered']);
-        self::assertSame(['One', 'Two'], $tokens[0]->data['items']);
+        self::assertSame("- One\n- Two", $tokens[0]->value);
     }
 
     public function testTokenizesOrderedList(): void
@@ -62,7 +62,19 @@ final class TokenizerTest extends TestCase
         self::assertSame(TokenType::List, $tokens[0]->type);
         self::assertTrue((bool) $tokens[0]->data['ordered']);
         self::assertSame(3, $tokens[0]->data['start']);
-        self::assertSame(['Three', 'Four'], $tokens[0]->data['items']);
+        self::assertSame("3. Three\n4. Four", $tokens[0]->value);
+    }
+
+    public function testTokenizesListWithIndentedContinuation(): void
+    {
+        $tokenizer = new Tokenizer();
+        $stream = $tokenizer->tokenize("- One\n  continuation\n  - Nested\n- Two");
+
+        $tokens = $stream->all();
+
+        self::assertCount(1, $tokens);
+        self::assertSame(TokenType::List, $tokens[0]->type);
+        self::assertSame("- One\n  continuation\n  - Nested\n- Two", $tokens[0]->value);
     }
 
     public function testTokenizesBlockquote(): void

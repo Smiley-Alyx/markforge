@@ -16,11 +16,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(HtmlRenderer::class)]
 final class ListRendererTest extends TestCase
 {
-    public function testRendersUnorderedList(): void
+    public function testRendersLooseList(): void
     {
         $renderer = new HtmlRenderer();
         $document = new DocumentNode([
-            new ListNode(false, null, [
+            new ListNode(false, null, false, [
                 new ListItemNode([new ParagraphNode([new TextNode('One')])]),
                 new ListItemNode([new ParagraphNode([new TextNode('Two')])]),
             ]),
@@ -31,17 +31,32 @@ final class ListRendererTest extends TestCase
         self::assertSame('<ul><li><p>One</p></li><li><p>Two</p></li></ul>', $html);
     }
 
+    public function testRendersUnorderedList(): void
+    {
+        $renderer = new HtmlRenderer();
+        $document = new DocumentNode([
+            new ListNode(false, null, true, [
+                new ListItemNode([new ParagraphNode([new TextNode('One')])]),
+                new ListItemNode([new ParagraphNode([new TextNode('Two')])]),
+            ]),
+        ]);
+
+        $html = $renderer->render($document);
+
+        self::assertSame('<ul><li>One</li><li>Two</li></ul>', $html);
+    }
+
     public function testRendersOrderedListWithStart(): void
     {
         $renderer = new HtmlRenderer();
         $document = new DocumentNode([
-            new ListNode(true, 3, [
+            new ListNode(true, 3, true, [
                 new ListItemNode([new ParagraphNode([new TextNode('Three')])]),
             ]),
         ]);
 
         $html = $renderer->render($document);
 
-        self::assertSame('<ol start="3"><li><p>Three</p></li></ol>', $html);
+        self::assertSame('<ol start="3"><li>Three</li></ol>', $html);
     }
 }

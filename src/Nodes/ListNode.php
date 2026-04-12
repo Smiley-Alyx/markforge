@@ -12,6 +12,7 @@ final class ListNode extends Node
     public function __construct(
         private readonly bool $ordered,
         private readonly ?int $start,
+        private readonly bool $tight,
         private readonly array $items,
     ) {
     }
@@ -24,6 +25,11 @@ final class ListNode extends Node
     public function start(): ?int
     {
         return $this->start;
+    }
+
+    public function tight(): bool
+    {
+        return $this->tight;
     }
 
     /**

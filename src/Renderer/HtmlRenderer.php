@@ -100,18 +100,28 @@ final class HtmlRenderer implements RendererInterface
 
         $itemsHtml = '';
         foreach ($list->items() as $item) {
-            $itemsHtml .= $this->renderListItem($item);
+            $itemsHtml .= $this->renderListItem($item, $list->tight());
         }
 
         return '<' . $tag . $attrs . '>' . $itemsHtml . '</' . $tag . '>';
     }
 
-    private function renderListItem(ListItemNode $item): string
+    private function renderListItem(ListItemNode $item, bool $tight): string
     {
         $inner = '';
         foreach ($item->children() as $child) {
             if ($child instanceof ParagraphNode) {
+                if ($tight) {
+                    $inner .= $this->renderInlines($child->children());
+                    continue;
+                }
+
                 $inner .= $this->renderParagraph($child);
+                continue;
+            }
+
+            if ($child instanceof ListNode) {
+                $inner .= $this->renderList($child);
             }
         }
 

@@ -43,7 +43,7 @@ See also: `examples/basic.php`.
 - inline code
 - horizontal rule
 - blockquote
-- lists
+- lists (nested, multiline items, tight/loose)
 - fenced code blocks
 - tables
 - images

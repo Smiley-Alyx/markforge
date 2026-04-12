@@ -53,17 +53,8 @@ final class Parser implements ParserInterface
             if ($token->type === TokenType::List) {
                 $ordered = (bool) ($token->data['ordered'] ?? false);
                 $start = isset($token->data['start']) ? (int) $token->data['start'] : null;
-                /** @var list<string> $items */
-                $items = $token->data['items'] ?? [];
 
-                $listItems = [];
-                foreach ($items as $itemText) {
-                    $listItems[] = new ListItemNode([
-                        new ParagraphNode($this->parseInlines($itemText)),
-                    ]);
-                }
-
-                $children[] = new ListNode($ordered, $start, $listItems);
+                $children[] = $this->parseListBlock($token->value, $ordered, $start);
                 continue;
             }
 
@@ -113,5 +104,194 @@ final class Parser implements ParserInterface
     private function parseInlines(string $text): array
     {
         return $this->inlineParser->parse($text);
+    }
+
+    private function parseListBlock(string $markdown, bool $ordered, ?int $start): ListNode
+    {
+        $lines = explode("\n", $markdown);
+
+        [$items, $tight] = $this->parseListItems($lines, 0);
+
+        return new ListNode($ordered, $start, $tight, $items);
+    }
+
+    /**
+     * @param list<string> $lines
+     * @return array{0: list<ListItemNode>, 1: bool}
+     */
+    private function parseListItems(array $lines, int $baseIndent): array
+    {
+        $idx = 0;
+        $max = count($lines);
+
+        $items = [];
+        $loose = false;
+
+        while ($idx < $max) {
+            $line = $lines[$idx];
+
+            if (trim($line) === '') {
+                $idx++;
+                continue;
+            }
+
+            $marker = $this->parseListMarker($line);
+            if ($marker === null || $marker['indent'] !== $baseIndent) {
+                break;
+            }
+
+            $idx++;
+
+            $paragraphLines = [$marker['text']];
+            $children = [];
+
+            $sawBlank = false;
+
+            while ($idx < $max) {
+                $current = $lines[$idx];
+
+                if (trim($current) === '') {
+                    $sawBlank = true;
+                    $idx++;
+                    continue;
+                }
+
+                $nextMarker = $this->parseListMarker($current);
+                if ($nextMarker !== null && $nextMarker['indent'] === $baseIndent) {
+                    if ($sawBlank) {
+                        $loose = true;
+                    }
+                    break;
+                }
+
+                if ($nextMarker !== null && $nextMarker['indent'] > $baseIndent) {
+                    $nestedLines = array_slice($lines, $idx);
+                    [$nestedItems, $nestedTight, $consumed] = $this->parseNestedList($nestedLines, $nextMarker['indent']);
+                    $children[] = new ListNode($nextMarker['ordered'], $nextMarker['start'], $nestedTight, $nestedItems);
+                    $idx += $consumed;
+                    continue;
+                }
+
+                $indent = $this->countIndent($current);
+                if ($indent > $baseIndent) {
+                    if ($sawBlank) {
+                        $loose = true;
+                        $paragraphLines[] = '';
+                        $sawBlank = false;
+                    }
+
+                    $paragraphLines[] = ltrim($current);
+                    $idx++;
+                    continue;
+                }
+
+                break;
+            }
+
+            $paragraphText = $this->normalizeParagraphLines($paragraphLines);
+            $children = array_merge([
+                new ParagraphNode($this->parseInlines($paragraphText)),
+            ], $children);
+
+            $items[] = new ListItemNode($children);
+        }
+
+        return [$items, !$loose];
+    }
+
+    /**
+     * @param list<string> $lines
+     * @return array{0: list<ListItemNode>, 1: bool, 2: int}
+     */
+    private function parseNestedList(array $lines, int $baseIndent): array
+    {
+        $consumedLines = [];
+        $idx = 0;
+        $max = count($lines);
+
+        while ($idx < $max) {
+            $line = $lines[$idx];
+            if (trim($line) === '') {
+                $consumedLines[] = $line;
+                $idx++;
+                continue;
+            }
+
+            $indent = $this->countIndent($line);
+            if ($indent < $baseIndent) {
+                break;
+            }
+
+            $consumedLines[] = $line;
+            $idx++;
+        }
+
+        [$items, $tight] = $this->parseListItems($consumedLines, $baseIndent);
+
+        $first = null;
+        foreach ($consumedLines as $l) {
+            if (trim($l) === '') {
+                continue;
+            }
+            $first = $this->parseListMarker($l);
+            break;
+        }
+
+        if ($first !== null) {
+            return [$items, $tight, $idx];
+        }
+
+        return [[], true, $idx];
+    }
+
+    /**
+     * @return array{indent: int, ordered: bool, start: ?int, text: string}|null
+     */
+    private function parseListMarker(string $line): ?array
+    {
+        if (preg_match('/^(\s*)([-*+])\s+(.*)$/', $line, $m) === 1) {
+            return [
+                'indent' => strlen($m[1]),
+                'ordered' => false,
+                'start' => null,
+                'text' => $m[3],
+            ];
+        }
+
+        if (preg_match('/^(\s*)(\d+)\.\s+(.*)$/', $line, $m) === 1) {
+            return [
+                'indent' => strlen($m[1]),
+                'ordered' => true,
+                'start' => (int) $m[2],
+                'text' => $m[3],
+            ];
+        }
+
+        return null;
+    }
+
+    private function countIndent(string $line): int
+    {
+        if (preg_match('/^(\s*)/', $line, $m) !== 1) {
+            return 0;
+        }
+
+        return strlen($m[1]);
+    }
+
+    /**
+     * @param list<string> $lines
+     */
+    private function normalizeParagraphLines(array $lines): string
+    {
+        while ($lines !== [] && $lines[0] === '') {
+            array_shift($lines);
+        }
+
+        while ($lines !== [] && $lines[count($lines) - 1] === '') {
+            array_pop($lines);
+        }
+
+        return implode("\n", $lines);
     }
 }
