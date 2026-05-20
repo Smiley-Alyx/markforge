@@ -10,8 +10,14 @@ final class ListItemNode extends Node
      * @param list<Node> $children
      */
     public function __construct(
+        private readonly ?bool $checked,
         private readonly array $children,
     ) {
+    }
+
+    public function checked(): ?bool
+    {
+        return $this->checked;
     }
 
     /**

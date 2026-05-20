@@ -302,6 +302,12 @@ final class Parser implements ParserInterface
 
             $paragraphText = $this->normalizeParagraphLines($paragraphLines);
 
+            $checked = null;
+            if (preg_match('/^\[( |x|X)\]\s+/', $paragraphText, $m) === 1) {
+                $checked = strtolower($m[1]) === 'x';
+                $paragraphText = preg_replace('/^\[( |x|X)\]\s+/', '', $paragraphText) ?? $paragraphText;
+            }
+
             $ref = $this->tryConsumeReferenceLinkDefinition($paragraphText);
             if ($ref !== null) {
                 [$key, $url] = $ref;
@@ -312,7 +318,7 @@ final class Parser implements ParserInterface
                 ...($ref === null ? [new ParagraphNode($this->parseInlines($paragraphText))] : []),
             ], $children);
 
-            $items[] = new ListItemNode($children);
+            $items[] = new ListItemNode($checked, $children);
         }
 
         return [$items, !$loose];

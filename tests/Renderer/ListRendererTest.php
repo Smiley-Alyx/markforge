@@ -21,8 +21,8 @@ final class ListRendererTest extends TestCase
         $renderer = new HtmlRenderer();
         $document = new DocumentNode([
             new ListNode(false, null, false, [
-                new ListItemNode([new ParagraphNode([new TextNode('One')])]),
-                new ListItemNode([new ParagraphNode([new TextNode('Two')])]),
+                new ListItemNode(null, [new ParagraphNode([new TextNode('One')])]),
+                new ListItemNode(null, [new ParagraphNode([new TextNode('Two')])]),
             ]),
         ]);
 
@@ -36,8 +36,8 @@ final class ListRendererTest extends TestCase
         $renderer = new HtmlRenderer();
         $document = new DocumentNode([
             new ListNode(false, null, true, [
-                new ListItemNode([new ParagraphNode([new TextNode('One')])]),
-                new ListItemNode([new ParagraphNode([new TextNode('Two')])]),
+                new ListItemNode(null, [new ParagraphNode([new TextNode('One')])]),
+                new ListItemNode(null, [new ParagraphNode([new TextNode('Two')])]),
             ]),
         ]);
 
@@ -51,12 +51,30 @@ final class ListRendererTest extends TestCase
         $renderer = new HtmlRenderer();
         $document = new DocumentNode([
             new ListNode(true, 3, true, [
-                new ListItemNode([new ParagraphNode([new TextNode('Three')])]),
+                new ListItemNode(null, [new ParagraphNode([new TextNode('Three')])]),
             ]),
         ]);
 
         $html = $renderer->render($document);
 
         self::assertSame('<ol start="3"><li>Three</li></ol>', $html);
+    }
+
+    public function testRendersTaskListItem(): void
+    {
+        $renderer = new HtmlRenderer();
+        $document = new DocumentNode([
+            new ListNode(false, null, true, [
+                new ListItemNode(false, [new ParagraphNode([new TextNode('Todo')])]),
+                new ListItemNode(true, [new ParagraphNode([new TextNode('Done')])]),
+            ]),
+        ]);
+
+        $html = $renderer->render($document);
+
+        self::assertSame(
+            '<ul><li><input type="checkbox" disabled /> Todo</li><li><input type="checkbox" disabled checked /> Done</li></ul>',
+            $html,
+        );
     }
 }

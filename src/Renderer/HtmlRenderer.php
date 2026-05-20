@@ -109,6 +109,15 @@ final class HtmlRenderer implements RendererInterface
     private function renderListItem(ListItemNode $item, bool $tight): string
     {
         $inner = '';
+
+        if ($item->checked() !== null) {
+            $inner .= '<input type="checkbox" disabled';
+            if ($item->checked()) {
+                $inner .= ' checked';
+            }
+            $inner .= ' /> ';
+        }
+
         foreach ($item->children() as $child) {
             if ($child instanceof ParagraphNode) {
                 if ($tight) {
