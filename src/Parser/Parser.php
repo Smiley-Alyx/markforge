@@ -21,12 +21,24 @@ use MarkForge\Tokenizer\Tokenizer;
 
 final class Parser implements ParserInterface
 {
+    /**
+     * @var array<string, string>
+     */
+    private array $referenceLinks = [];
+
     public function __construct(
         private readonly InlineParserInterface $inlineParser = new InlineParser(),
     ) {
     }
 
     public function parse(TokenStream $tokens): DocumentNode
+    {
+        $this->referenceLinks = $this->collectReferenceLinks($tokens);
+
+        return $this->parseWithReferenceLinks($tokens);
+    }
+
+    private function parseWithReferenceLinks(TokenStream $tokens): DocumentNode
     {
         $children = [];
 
@@ -45,7 +57,7 @@ final class Parser implements ParserInterface
             if ($token->type === TokenType::Blockquote) {
                 $innerTokenizer = new Tokenizer();
                 $innerTokens = $innerTokenizer->tokenize($token->value);
-                $innerDocument = $this->parse($innerTokens);
+                $innerDocument = $this->parseWithReferenceLinks($innerTokens);
                 $children[] = new BlockquoteNode($innerDocument->children());
                 continue;
             }
@@ -94,6 +106,10 @@ final class Parser implements ParserInterface
                 continue;
             }
 
+            if ($this->tryConsumeReferenceLinkDefinition($token->value) !== null) {
+                continue;
+            }
+
             $children[] = new ParagraphNode($this->parseInlines($token->value));
         }
 
@@ -105,7 +121,101 @@ final class Parser implements ParserInterface
      */
     private function parseInlines(string $text): array
     {
+        if ($this->referenceLinks !== [] && $this->inlineParser instanceof InlineParser) {
+            return $this->inlineParser->parseWithReferenceLinks($text, $this->referenceLinks);
+        }
+
         return $this->inlineParser->parse($text);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function collectReferenceLinks(TokenStream $tokens): array
+    {
+        $links = [];
+
+        foreach ($tokens as $token) {
+            if ($token->type === TokenType::Paragraph) {
+                $def = $this->tryConsumeReferenceLinkDefinition($token->value);
+                if ($def !== null) {
+                    [$key, $url] = $def;
+                    $links[$key] = $url;
+                }
+                continue;
+            }
+
+            if ($token->type === TokenType::Blockquote) {
+                $innerTokenizer = new Tokenizer();
+                $innerTokens = $innerTokenizer->tokenize($token->value);
+                foreach ($this->collectReferenceLinks($innerTokens) as $key => $url) {
+                    $links[$key] = $url;
+                }
+            }
+        }
+
+        return $links;
+    }
+
+    /**
+     * @return array{0: string, 1: string}|null
+     */
+    private function tryConsumeReferenceLinkDefinition(string $paragraphText): ?array
+    {
+        if (str_contains($paragraphText, "\n")) {
+            return null;
+        }
+
+        $line = ltrim($paragraphText);
+
+        if (preg_match('/^\[([^\]]+)\]:\s*(\S+)(?:\s+(?:"([^"]*)"|\(([^)]*)\)))?\s*$/', $line, $m) !== 1) {
+            return null;
+        }
+
+        $label = $this->normalizeReferenceLabel($m[1]);
+        if ($label === '') {
+            return null;
+        }
+
+        $url = $this->sanitizeUrl($m[2]);
+        if ($url === null) {
+            return null;
+        }
+
+        return [$label, $url];
+    }
+
+    private function normalizeReferenceLabel(string $label): string
+    {
+        $collapsed = preg_replace('/\s+/u', ' ', trim($label));
+        if ($collapsed === null) {
+            $collapsed = trim($label);
+        }
+
+        return strtolower($collapsed);
+    }
+
+    private function sanitizeUrl(string $url): ?string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return null;
+        }
+
+        if (preg_match('/^([a-zA-Z][a-zA-Z0-9+.-]*):/', $url, $m) === 1) {
+            $scheme = strtolower($m[1]);
+            if (!in_array($scheme, ['http', 'https', 'mailto'], true)) {
+                return null;
+            }
+
+            return $url;
+        }
+
+        if (str_starts_with($url, '//')) {
+            return null;
+        }
+
+        return $url;
     }
 
     private function parseListBlock(string $markdown, bool $ordered, ?int $start): ListNode
@@ -191,8 +301,15 @@ final class Parser implements ParserInterface
             }
 
             $paragraphText = $this->normalizeParagraphLines($paragraphLines);
+
+            $ref = $this->tryConsumeReferenceLinkDefinition($paragraphText);
+            if ($ref !== null) {
+                [$key, $url] = $ref;
+                $this->referenceLinks[$key] = $url;
+            }
+
             $children = array_merge([
-                new ParagraphNode($this->parseInlines($paragraphText)),
+                ...($ref === null ? [new ParagraphNode($this->parseInlines($paragraphText))] : []),
             ], $children);
 
             $items[] = new ListItemNode($children);

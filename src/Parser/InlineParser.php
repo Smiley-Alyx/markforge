@@ -15,6 +15,11 @@ use MarkForge\Nodes\TextNode;
 final class InlineParser implements InlineParserInterface
 {
     /**
+     * @var array<string, string>
+     */
+    private array $referenceLinks = [];
+
+    /**
      * @return list<Node>
      */
     public function parse(string $text): array
@@ -220,6 +225,17 @@ final class InlineParser implements InlineParserInterface
     }
 
     /**
+     * @param array<string, string> $referenceLinks
+     * @return list<Node>
+     */
+    public function parseWithReferenceLinks(string $text, array $referenceLinks): array
+    {
+        $this->referenceLinks = $referenceLinks;
+
+        return $this->parse($text);
+    }
+
+    /**
      * @return array{0: Node, 1: int}|null
      */
     private function tryParseAutolinkAt(string $text, int $pos): ?array
@@ -316,27 +332,81 @@ final class InlineParser implements InlineParserInterface
             return null;
         }
 
-        $openParenPos = $closeBracket + 1;
-        if (!isset($text[$openParenPos]) || $text[$openParenPos] !== '(') {
-            return null;
-        }
-
-        $closeParen = strpos($text, ')', $openParenPos + 1);
-        if ($closeParen === false) {
-            return null;
-        }
-
         $label = substr($text, $pos + 1, $closeBracket - ($pos + 1));
-        $rawUrl = trim(substr($text, $openParenPos + 1, $closeParen - ($openParenPos + 1)));
 
-        $url = $this->sanitizeUrl($rawUrl);
+        $openPos = $closeBracket + 1;
+        if (isset($text[$openPos]) && $text[$openPos] === '(') {
+            $closeParen = strpos($text, ')', $openPos + 1);
+            if ($closeParen === false) {
+                return null;
+            }
+
+            $rawUrl = trim(substr($text, $openPos + 1, $closeParen - ($openPos + 1)));
+            $url = $this->sanitizeUrl($rawUrl);
+            if ($url === null) {
+                return [new TextNode(substr($text, $pos, $closeParen - $pos + 1)), $closeParen + 1];
+            }
+
+            $children = $this->parse($label);
+
+            return [new LinkNode($url, $children), $closeParen + 1];
+        }
+
+        return $this->tryParseReferenceLinkAt($text, $pos, $closeBracket, $label);
+    }
+
+    /**
+     * @return array{0: Node, 1: int}|null
+     */
+    private function tryParseReferenceLinkAt(string $text, int $pos, int $closeBracket, string $label): ?array
+    {
+        if ($this->referenceLinks === []) {
+            return null;
+        }
+
+        $after = $closeBracket + 1;
+        $len = strlen($text);
+
+        $refLabel = null;
+        $endPos = null;
+
+        if ($after < $len && $text[$after] === '[') {
+            $closeRef = strpos($text, ']', $after + 1);
+            if ($closeRef === false) {
+                return null;
+            }
+
+            $inside = substr($text, $after + 1, $closeRef - ($after + 1));
+            $refLabel = $inside === '' ? $label : $inside;
+            $endPos = $closeRef + 1;
+        } else {
+            $refLabel = $label;
+            $endPos = $closeBracket + 1;
+        }
+
+        $normalized = $this->normalizeReferenceLabel($refLabel);
+        if ($normalized === '') {
+            return null;
+        }
+
+        $url = $this->referenceLinks[$normalized] ?? null;
         if ($url === null) {
-            return [new TextNode(substr($text, $pos, $closeParen - $pos + 1)), $closeParen + 1];
+            return [new TextNode(substr($text, $pos, $endPos - $pos)), $endPos];
         }
 
         $children = $this->parse($label);
 
-        return [new LinkNode($url, $children), $closeParen + 1];
+        return [new LinkNode($url, $children), $endPos];
+    }
+
+    private function normalizeReferenceLabel(string $label): string
+    {
+        $collapsed = preg_replace('/\s+/u', ' ', trim($label));
+        if ($collapsed === null) {
+            $collapsed = trim($label);
+        }
+
+        return strtolower($collapsed);
     }
 
     private function sanitizeUrl(string $url): ?string
