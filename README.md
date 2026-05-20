@@ -42,10 +42,12 @@ See also: `examples/basic.php`.
 - bold
 - italic
 - links
+- reference-style links
 - inline code
 - horizontal rule
 - blockquote
 - lists (nested, multiline items, tight/loose)
+- task lists
 - fenced code blocks
 - tables
 - images

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- Links: support reference-style links (`[text][id]`, `[id]`, `[id]: url "title"`).
+- Lists: support GFM task list items (`- [ ]`, `- [x]`).
+
 ## 0.2.0
 
 - Improve list compatibility:
